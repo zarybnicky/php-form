@@ -7,24 +7,15 @@ use Olc\Form\Types\DataSource;
 
 class FileEnvironmentEnricher extends Plugin
 {
-    public function renderBefore_10(Zipper $z)
+    public function __construct()
     {
-        $this->setEnvironment($z);
-    }
+        $set = array($this, 'setEnvironment');
+        $unset = array($this, 'unsetEnvironment');
 
-    public function renderAfter_10(Zipper $z)
-    {
-        $this->unsetEnvironment($z);
-    }
-
-    public function submitBefore_100(Zipper $z)
-    {
-        $this->setEnvironment($z);
-    }
-
-    public function submitAfter_100(Zipper $z)
-    {
-        $this->unsetEnvironment($z);
+        $this->addAdvice(array('render', -100, 'before'), $set);
+        $this->addAdvice(array('submit', -100, 'before'), $set);
+        $this->addAdvice(array('render', -100, 'after'), $unset);
+        $this->addAdvice(array('submit', -100, 'after'), $unset);
     }
 
     public function setEnvironment(Zipper $z)

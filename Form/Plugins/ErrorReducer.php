@@ -5,7 +5,15 @@ use Olc\Data\Zipper;
 
 class ErrorReducer extends Plugin
 {
-    public function renderBefore_50(Zipper $z)
+    public function __construct()
+    {
+        $this->addAdvice(
+            array('render', -50, 'before'),
+            array($this, 'extractErrors')
+        );
+    }
+
+    public function extractErrors(Zipper $z)
     {
         $as = array(array());
         foreach ($z->getContent()->flattenPostorder() as $x) {

@@ -11,11 +11,11 @@ class Generator extends Plugin
 
     public function __construct(Widget $x)
     {
-        parent::__construct();
         $this->widget = $x;
+        $this->addAdvice(array('render', 1, 'override'), array($this, 'render'));
     }
 
-    public function renderOverride1(Zipper $x)
+    public function render(Zipper $x)
     {
         $el = $this->widget;
         $current = $x->getContent();

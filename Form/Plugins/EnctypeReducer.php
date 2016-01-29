@@ -6,7 +6,15 @@ use Olc\Form\Types\Enctype;
 
 class EnctypeReducer extends Plugin
 {
-    public function renderBefore_50(Zipper $z)
+    public function __construct()
+    {
+        $this->addAdvice(
+            array('render', -50, 'before'),
+            array($this, 'extractEnctype')
+        );
+    }
+
+    public function extractEnctype(Zipper $z)
     {
         $as = array();
         foreach ($z->getContent()->flattenPostorder() as $x) {

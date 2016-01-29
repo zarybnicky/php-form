@@ -85,20 +85,20 @@ function convert($size)
     return round($size / pow(1024, $i), 2) . ' ' . $unit[$i];
 }
 
-echo convert(memory_get_usage()), "\n";
+//echo convert(memory_get_usage()), "\n";
 
 $_SERVER['REQUEST_METHOD'] = 'POST';
 $x = new TestForm('table');
 $x->with(new Generator(new Widget\SimpleTable()));
 $x->run();
 
-echo convert(memory_get_usage()), "\n";
+//echo convert(memory_get_usage()), "\n";
 
 $y = new TestForm('divs');
 $y->with(new Generator(new Widget\SimpleDivs()));
 $y->run();
 
-echo convert(memory_get_usage()), "\n";
+//echo convert(memory_get_usage()), "\n";
 
 $f = new TestForm('form');
 $f->with(new Generator(new Widget\SimpleDivs(array("submit" => false))));
@@ -115,7 +115,8 @@ $z = new Fields\Void('nested');
 $z->add($f);
 $z->add($t);
 
-foreach (range(0, 2000) as $i) {
+/*
+foreach (range(0, 1000) as $i) {
     $field = new Fields\Text();
     $field->with(new Validator(new Validation\Custom(
         function ($x) {
@@ -124,16 +125,37 @@ foreach (range(0, 2000) as $i) {
         '"42?" must be 42.'
     )));
     $z->add($field);
+    //echo convert(memory_get_usage()), "\n";
 }
-
+*/
 $z->set('method', DataSource::POST());
 $z->with(new Generator(new Widget\SimpleTable()));
 $z->run();
 
-echo convert(memory_get_usage()), "\n";
+//echo convert(memory_get_usage()), "\n";
 
-echo convert(memory_get_peak_usage()), "\n";
-exit;
+//echo convert(memory_get_peak_usage()), "\n";
+function analyzeMem($obj, $deep = false)
+{
+    if (is_scalar($obj)) {
+        return strlen(serialize($obj));
+    }
+    if ($obj instanceof \Closure) {
+        return '[closure]';
+    }
+    $usage = array('Total' => strlen(serialize($obj)));
+    while (list($prop, $propVal) = each($obj)) {
+        if ($deep && (is_object($propVal) || is_array($propVal))) {
+            $usage['Children'][$prop] = analyzeMem($propVal);
+        } elseif ($propVal instanceof \Closure) {
+            $usage['Children'][$prop] = '[closure]';
+        } else {
+            $usage['Children'][$prop] = strlen(serialize($propVal));
+        }
+    }
+    return $usage;
+}
+
 ?>
 <html>
     <body>

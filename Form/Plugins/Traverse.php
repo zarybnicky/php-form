@@ -1,103 +1,65 @@
 <?php
-namespace Olc\Utility;
+namespace Olc\Form\Plugins;
 
-function allPass(array $fs, $x)
+use Olc\Advice\Bounce;
+use Olc\Data\Zipper;
+
+class Traverse extends Plugin
 {
-    foreach ($fs as $f) {
-        if (!$f($x)) {
-            return false;
+    public function __construct()
+    {
+        $this->addAdvice(
+            array('render', 0, 'before'),
+            array($this, 'traverseRender')
+        );
+        $this->addAdvice(
+            array('submit', 0, 'before'),
+            array($this, 'traverseSubmit')
+        );
+    }
+
+    public function traverseRender(Zipper $z)
+    {
+        return $this->traverse('render', $z);
+    }
+
+    public function traverseSubmit(Zipper $z)
+    {
+        return $this->traverse('submit', $z);
+    }
+
+    protected function traverse($method, $z)
+    {
+        if ($z->isLeaf()) {
+            return;
         }
+        $z->firstChild();
+
+        $recur = array($this, 'recur');
+        return new Bounce(
+            function () use ($method, $z) {
+                $z->getContent()->$method($z);
+            },
+            function () use ($recur, $method, $z) {
+                return call_user_func($recur, $method, $z);
+            }
+        );
     }
-    return true;
-}
 
-function andF($x, $y)
-{
-    return $x && $y;
-}
-
-function anyPass(array $fs, $x)
-{
-    foreach ($fs as $f) {
-        if ($f($x)) {
-            return true;
+    public function recur($method, $z)
+    {
+        if (!$z->next()) {
+            $z->parent();
+            return null;
         }
-    }
-    return false;
-}
-
-function both(callable $f, callable $g, $x)
-{
-    if (!($result = $f($x))) {
-        return $result;
-    } else {
-        return $g($x);
-    }
-}
-
-function complement(callable $f, $x)
-{
-    return !$f($x);
-}
-
-function cond(array $preds, $x)
-{
-    foreach ($preds as $pred) {
-        list($test, $f) = $pred;
-        if ($test($x)) {
-            return $f($x);
-        }
-    }
-    return null;
-}
-
-function defaultTo($default, $x)
-{
-    return $x ?: $default;
-}
-
-function either(callable $f, callable $g, $x)
-{
-    if ($result = $f($x)) {
-        return $result;
-    } else {
-        return $g($x);
-    }
-}
-
-function ifElse($cond, $onTrue, $onFalse, $x)
-{
-    if ($cond($x)) {
-        return $onTrue($x);
-    } else {
-        return $onFalse($x);
-    }
-}
-
-function not($x)
-{
-    return !$x;
-}
-
-function orF($x, $y)
-{
-    return $x || $y;
-}
-
-function unless($cond, $onFalse, $x)
-{
-    if (!$cond($x)) {
-        return $onFalse($x);
-    } else {
-        return $x;
-    }
-}
-
-function when($cond, $onTrue, $x)
-{
-    if ($cond($x)) {
-        return $onTrue($x);
-    } else {
-        return $x;
+        $recur = array($this, 'recur');
+        return new Bounce(
+            function () use ($method, $z) {
+                $z->getContent()->$method($z);
+            },
+            function () use ($method, $z, $recur) {
+                return call_user_func($recur, $method, $z);
+            }
+        );
     }
 }

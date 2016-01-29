@@ -6,53 +6,32 @@ use Olc\Advice\Manager;
 
 abstract class Plugin
 {
-    private static $cache = array();
-    protected $methods = array();
+    protected $advice = array();
 
-    public function __construct()
+    protected function addAdvice($spec, $fn)
     {
-        $class = get_class($this);
-        if (!isset(self::$cache[$class])) {
-            $methods = array();
-            foreach (get_class_methods($this) as $fn) {
-                $target = substr($fn, 0, 6);
-                if ($target == 'render' || $target === 'submit') {
-                    $methods[] = $this->parseMethod($fn);
-                }
-            }
-            self::$cache[$class] = $methods;
+        $spec = array_pad($spec, 4, null);
+        if (!$spec[3]) {
+            $spec[3] = $this->getName();
         }
-        $this->methods = self::$cache[$class];
-    }
-
-    protected function parseMethod($fn)
-    {
-        if (!preg_match('/(render|submit)(.*?)(_?[0-9]+|)$/', $fn, $match)) {
-            throw new LogicException("Unrecognized plugin method '$fn'");
-        }
-        list(, $target, $type, $depth) = $match;
-        $type = ltrim(strtolower(preg_replace('/[A-Z]/', '-$0', $type)), '-');
-        $depth = $depth ? str_replace('_', '-', $depth) : 0;
-        $name = $this->getName();
-
-        return array(array($target, $depth, $type, $name), $fn);
+        $this->advice[] = array($spec, $fn);
     }
 
     public function load(Manager $p)
     {
-        foreach ($this->methods as $x) {
+        foreach ($this->advice as $x) {
             list($spec, $fn) = $x;
             if (!$p->uses($spec)) {
-                $p->on($spec, array($this, $fn));
+                $p->on($spec, $fn);
             }
         }
     }
 
     public function unload(Manager $p)
     {
-        foreach ($this->methods as $x) {
+        foreach ($this->advice as $x) {
             list($spec, $fn) = $x;
-            $p->off($spec, array($this, $fn));
+            $p->off($spec, $fn);
         }
     }
 
