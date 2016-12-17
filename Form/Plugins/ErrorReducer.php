@@ -7,13 +7,16 @@ class ErrorReducer extends Plugin
 {
     public function __construct()
     {
+        parent::__construct();
+        $this->name = 'ErrorReducer';
+
         $this->addAdvice(
             array('render', -50, 'before'),
-            array($this, 'extractErrors')
+            get_class() . '::extractErrors'
         );
     }
 
-    public function extractErrors(Zipper $z)
+    public static function extractErrors(Zipper $z)
     {
         $as = array(array());
         foreach ($z->getContent()->flattenPostorder() as $x) {

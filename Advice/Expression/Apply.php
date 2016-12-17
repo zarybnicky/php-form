@@ -18,7 +18,7 @@ class Apply extends Expression
             function () use ($source, $args) {
                 return $source->run($args);
             },
-            $this->recur($sink, $rest, $args)
+            self::recur($sink, $rest, $args)
         );
 
         $sink = $this->spec[0];
@@ -31,7 +31,7 @@ class Apply extends Expression
         return $sink->run($newArgs);
     }
 
-    public function recur($sink, $rest, $args)
+    public static function recur($sink, $rest, $args)
     {
         if (!$rest) {
             return function ($return) use ($sink) {
@@ -39,7 +39,7 @@ class Apply extends Expression
             };
         }
 
-        $recur = array($this, 'recur');
+        $recur = get_class() . '::recur';
         return function ($return) use ($recur, $sink, $rest, $args) {
             $fn = array_shift($rest);
             return new Bounce(

@@ -6,13 +6,19 @@ use Olc\Advice\Manager;
 
 abstract class Plugin
 {
+    protected $name;
     protected $advice = array();
+
+    public function __construct()
+    {
+        $this->name = get_called_class();
+    }
 
     protected function addAdvice($spec, $fn)
     {
         $spec = array_pad($spec, 4, null);
         if (!$spec[3]) {
-            $spec[3] = $this->getName();
+            $spec[3] = $this->name;
         }
         $this->advice[] = array($spec, $fn);
     }
@@ -37,6 +43,6 @@ abstract class Plugin
 
     public function getName()
     {
-        return get_called_class();
+        return $this->name;
     }
 }

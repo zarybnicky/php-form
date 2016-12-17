@@ -6,7 +6,22 @@ use Olc\Widget\Tag;
 
 class Wrapper extends Plugin
 {
-    public function renderAround_10($f, Zipper $z)
+    public function __construct()
+    {
+        parent::__construct();
+        $this->name = 'Wrapper';
+
+        $this->addAdvice(
+            array('render', -10, 'around'),
+            get_class() . '::renderForm'
+        );
+        $this->addAdvice(
+            array('submit', -10, 'before-while'),
+            get_class() . '::shouldFormSubmit'
+        );
+    }
+
+    public static function renderForm($f, Zipper $z)
     {
         $current = $z->getContent();
         return new Tag(
@@ -24,7 +39,7 @@ class Wrapper extends Plugin
         );
     }
 
-    public function submitBeforeWhile_10(Zipper $z)
+    public static function shouldFormSubmit(Zipper $z)
     {
         $current = $z->getContent();
 

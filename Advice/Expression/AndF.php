@@ -22,8 +22,7 @@ class AndF extends Expression
                 return new Bounce(
                     function () use ($second, $args) {
                         return $second->run($args);
-                    },
-                    null
+                    }
                 );
             }
         );

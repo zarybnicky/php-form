@@ -7,13 +7,16 @@ class ValueReducer extends Plugin
 {
     public function __construct()
     {
+        parent::__construct();
+        $this->name = 'ValueReducer';
+
         $this->addAdvice(
             array('submit', 1, 'override'),
-            array($this, 'reduce')
+            get_class() . '::reduce'
         );
     }
 
-    public function reduce(Zipper $z)
+    public static function reduce(Zipper $z)
     {
         $result = array();
         foreach ($z->getContent()->getChildren() as $k => $v) {

@@ -7,17 +7,27 @@ use Olc\Widget\Widget;
 
 class Generator extends Plugin
 {
-    protected $widget;
-
-    public function __construct(Widget $x)
+    public function __construct(Widget $widget)
     {
-        $this->widget = $x;
-        $this->addAdvice(array('render', 1, 'override'), array($this, 'render'));
+        parent::__construct();
+        $this->name = 'Generator (' . get_class($widget) . ')';
+
+        $this->addAdvice(
+            array('render', 1, 'override'),
+            self::getGenerator($widget)
+        );
     }
 
-    public function render(Zipper $x)
+    public static function getGenerator(Widget $widget)
     {
-        $el = $this->widget;
+        $class = get_class();
+        return function (Zipper $x) use ($widget, $class) {
+            return $class::render($x, $widget);
+        };
+    }
+
+    public static function render(Zipper $x, Widget $el)
+    {
         $current = $x->getContent();
         list(, $value) = $x->getRoot()->get('environment')->get($x->getPath());
 
@@ -26,13 +36,8 @@ class Generator extends Plugin
         $el->set('value', $value);
 
         foreach ($current->getChildren() as $child) {
-            $el->addChild($child->get('view'));
+            $el->add($child->get('view'));
         }
         return $el;
-    }
-
-    public function getName()
-    {
-        return 'generator-' . get_class($this->widget);
     }
 }

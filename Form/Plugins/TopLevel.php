@@ -5,6 +5,8 @@ class TopLevel extends Group
 {
     public function __construct()
     {
+        parent::__construct();
+
         $this->addPlugin(new EnvironmentEnricher());
         $this->addPlugin(new FileEnvironmentEnricher());
         $this->addPlugin(new ErrorReducer());

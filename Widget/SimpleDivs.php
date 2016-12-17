@@ -13,13 +13,13 @@ class SimpleDivs extends Widget
             },
             $this->children
         );
-        $submit = null;
-        if (!isset($this->attributes['submit']) || $this->attributes['submit']) {
+        $submit = '';
+        if (!isset($this->value['submit']) || $this->value['submit']) {
             $submit = new Tag('input', array('type' => 'submit'));
         }
         return new Tag(
             'div',
-            $this->attributes,
+            $this->value,
             $children,
             $submit
         );

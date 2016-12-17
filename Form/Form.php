@@ -72,14 +72,14 @@ abstract class Form extends Tree
 
     public function submit(Zipper $z)
     {
-        $result = $this->proxy->run('submit', $this->always(null), array($z));
+        $result = $this->proxy->run('submit', always(''), array($z));
         $this->set('result', $result);
         return $result;
     }
 
     public function render(Zipper $z)
     {
-        $view = $this->proxy->run('render', $this->always(null), array($z));
+        $view = $this->proxy->run('render', always(null), array($z));
         $this->set('view', $view);
         return $view;
     }
@@ -97,16 +97,9 @@ abstract class Form extends Tree
     {
         if (($key = array_search($p->getName(), $this->plugins)) !== false) {
             unset($this->plugins[$key]);
+            $p->unload($this->proxy);
         }
-        $p->unload($this->proxy);
         return $this;
-    }
-
-    private function always($x)
-    {
-        return function () use ($x) {
-            return $x;
-        };
     }
 
     private function makeId($name)
@@ -133,4 +126,11 @@ abstract class Form extends Tree
         }
         return "{$this->name} (" . implode(', ', $this->plugins) . ")$children";
     }
+}
+
+function always($x)
+{
+    return function () use ($x) {
+        return $x;
+    };
 }

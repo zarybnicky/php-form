@@ -36,33 +36,22 @@ class Tree
         return isset($this->children[$name]) ? $this->children[$name] : false;
     }
 
-    public function contains(Tree $element)
-    {
-        return isset($this->children[$element->getName()]);
-    }
-
     public function add(Tree $element)
     {
-        if ($this->contains($element)) {
-            throw new LogicException('Attemped to redefine child ' . $element->getName());
-        }
-        $this->children[$element->getName()] = $element;
+        $this->children[] = $element;
     }
 
     public function remove(Tree $element)
     {
-        if (!$this->contains($element)) {
-            throw new LogicException('Attempted to remove nonexistent child ' . $element->getName());
+        $key = array_search($this->children, $element);
+        if ($key) {
+            unset($this->children[$key]);
         }
-        unset($this->children[$element->getName()]);
     }
 
     public function addAt($n, Tree $element)
     {
-        if ($this->contains($element)) {
-            throw new LogicException('Attempted to redefine child ' . $element->getName());
-        }
-        array_splice($this->children, $n, 0, array($element->getName() => $element));
+        array_splice($this->children, $n, 0, array($element));
     }
 
     public function removeAt($n)
@@ -72,7 +61,7 @@ class Tree
 
     public function update($fn)
     {
-        $this->value = $fn($this->value);
+        $this->value = $fn($this->value, $this);
     }
 
     public function traverse($fn)
@@ -80,8 +69,14 @@ class Tree
         $stack = array($this);
         while ($stack) {
             $current = array_pop($stack);
-            $current->update($fn);
-            $stack = array_merge($stack, array_reverse($current->getChildren()));
+            if ($current instanceof Tree) {
+                $current->update($fn);
+                if ($children = $current->getChildren()) {
+                    for (end($children); key($children) !== null; prev($children)) {
+                        $stack[] = current($children);
+                    }
+                }
+            }
         }
     }
 
@@ -95,12 +90,14 @@ class Tree
             if ($children = $x->getChildren()) {
                 if ($x !== end($ancestors)) {
                     $ancestors[] = $x;
-                    $stack = array_merge($stack, array_reverse($children));
+                    for (end($children); key($children) !== null; prev($children)) {
+                        $stack[] = current($children);
+                    }
                     continue;
                 }
                 array_pop($ancestors);
             }
-            $result[$x->getName()] = $x->getValue();
+            $result[] = $x->getValue();
             array_pop($stack);
         }
         return $result;

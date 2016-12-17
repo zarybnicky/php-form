@@ -1,20 +1,15 @@
 <?php
 namespace Olc\Widget;
 
-class Widget
-{
-    protected $attributes = array();
-    protected $children = array();
+use Olc\Data\Tree;
 
+class Widget extends Tree
+{
     protected $stylesheets = array();
     protected $scripts = array();
 
     public function __construct(array $attributes = array(), $child = array())
     {
-        $this->name = get_called_class();
-        $this->attributes = $attributes;
-
-        //Flatten input
         $children = array();
         array_walk_recursive(
             (array_slice(func_get_args(), 1)),
@@ -22,60 +17,29 @@ class Widget
                 $children[] = $a;
             }
         );
-        foreach ($children as $child) {
-            $this->addChild($child);
-        }
-        $this->initialize();
-    }
-
-    public function initialize()
-    {
+        parent::__construct(
+            get_called_class(),
+            $attributes,
+            $children
+        );
     }
 
     public function get($name = null)
     {
         if ($name === null) {
-            return $this->attributes;
+            return $this->value;
         }
-        return isset($this->attributes[$name]) ? $this->attributes[$name] : null;
+        return isset($this->value[$name]) ? $this->value[$name] : null;
     }
 
     public function set($key, $value)
     {
-        $this->attributes[$key] = $value;
+        $this->value[$key] = $value;
     }
 
     public function setAttributes(array $new)
     {
-        $this->attributes = array_merge($this->attributes, $new);
-    }
-
-    public function addChild($el, $n = null)
-    {
-        if ($n === null) {
-            $this->children[] = $el;
-        } else {
-            array_splice($this->children, $n, 0, array($el));
-        }
-        if (!($el instanceof Widget)) {
-            return;
-        }
-        if ($styles = $el->getStylesheets()) {
-            $this->stylesheets = array_merge($this->stylesheets, $styles);
-        }
-        if ($scripts = $el->getScripts()) {
-            $this->scripts = array_merge($this->scripts, $scripts);
-        }
-    }
-
-    public function addStylesheet($attributes = array(), $source = '')
-    {
-        $this->stylesheets[] = array($attributes, $source);
-    }
-
-    public function addScript($attributes = array(), $source = '')
-    {
-        $this->scripts[] = array($attributes, $source);
+        $this->value = array_merge($this->value, $new);
     }
 
     public function getStylesheets()
@@ -88,6 +52,16 @@ class Widget
         return $this->scripts;
     }
 
+    public function addStylesheet(array $attributes, $source = '')
+    {
+        $this->stylesheets[] = new Tag('style', $attributes, $source);
+    }
+
+    public function addScript(array $attributes, $source = '')
+    {
+        $this->scripts[] = new Tag('script', $attributes, $source);
+    }
+
     public function render()
     {
         return '';
@@ -95,21 +69,18 @@ class Widget
 
     public function renderToString()
     {
-        $result = '';
-
-        foreach ($this->getStylesheets() as $style) {
-            list($attrs, $src) = $style;
-            $el = new Tag('style', $attrs, $src);
-            $result .= $style->render();
-        }
-        $result .= $this->renderChild($this->render());
-        foreach ($this->getScripts() as $script) {
-            list($attrs, $src) = $script;
-            $el = new Tag('script', $attrs, $src);
-            $result .= $el->render();
-        }
-
-        return $result;
+        $result = array();
+        $result[] = $this->render();
+        $this->traverse(
+            function ($val, $x) use (&$result) {
+                if ($x instanceof Widget) {
+                    $result[] = $x->getStylesheets();
+                    $result[] = $x->getScripts();
+                }
+                return $val;
+            }
+        );
+        return $this->renderChild($result);
     }
 
     public function __toString()
@@ -117,28 +88,29 @@ class Widget
         return $this->renderToString();
     }
 
-    protected function renderChildren()
-    {
-        $result = '';
-        foreach ($this->children as $child) {
-            $result .= $this->renderChild($child);
-        }
-        return $result;
-    }
-
     protected function renderChild($element)
     {
-        while ($element instanceof Widget) {
-            $element = $element->render();
-        }
-        if (is_array($element)) {
-            $result = '';
-            foreach ($element as $child) {
-                $result .= $this->renderChild($child);
+        $result = '';
+        $stack = array($element);
+        while ($stack) {
+            $x = array_pop($stack);
+            while ($x instanceof Widget) {
+                $x = $x->render();
             }
-            return $result;
-        } else {
-            return (string) $element;
+            if (is_string($x)) {
+                $result .= $x;
+                continue;
+            }
+            if (is_array($x)) {
+                if ($x) {
+                    for (end($x); key($x) !== null; prev($x)) {
+                        $stack[] = current($x);
+                    }
+                }
+                continue;
+            }
+            trigger_error('Invalid Widget child (' . gettype($x) . '), ignoring.');
         }
+        return $result;
     }
 }

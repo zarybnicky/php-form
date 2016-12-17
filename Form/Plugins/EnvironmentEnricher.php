@@ -10,8 +10,11 @@ class EnvironmentEnricher extends Plugin
 {
     public function __construct()
     {
-        $set = array($this, 'setEnvironment');
-        $unset = array($this, 'unsetEnvironment');
+        parent::__construct();
+        $this->name = 'EnvironmentEnricher';
+
+        $set = get_class() . '::setEnvironment';
+        $unset = get_class() . '::unsetEnvironment';
 
         $this->addAdvice(array('render', -100, 'before'), $set);
         $this->addAdvice(array('submit', -100, 'before'), $set);
@@ -19,23 +22,19 @@ class EnvironmentEnricher extends Plugin
         $this->addAdvice(array('submit', -100, 'after'), $unset);
     }
 
-    public function setEnvironment(Zipper $z)
+    public static function setEnvironment(Zipper $z)
     {
         $current = $z->getContent();
 
-        $data = $this->getData($current->get('method'));
+        $source = $current->get('method');
+        $data = $GLOBALS[$source->getValue()];
         $env = new Environment($current->get('initialData'), $data);
         $current->set('environment', $env);
     }
 
-    public function unsetEnvironment(Zipper $z)
+    public static function unsetEnvironment(Zipper $z)
     {
         $current = $z->getContent();
         $current->set('environment', null);
-    }
-
-    public function getData(DataSource $s)
-    {
-        return $GLOBALS[$s->getValue()];
     }
 }

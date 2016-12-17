@@ -8,57 +8,56 @@ class Traverse extends Plugin
 {
     public function __construct()
     {
+        parent::__construct();
+        $this->name = 'Traverse';
+
         $this->addAdvice(
             array('render', 0, 'before'),
-            array($this, 'traverseRender')
+            get_class() . '::traverseRender'
         );
         $this->addAdvice(
             array('submit', 0, 'before'),
-            array($this, 'traverseSubmit')
+            get_class() . '::traverseSubmit'
         );
     }
 
-    public function traverseRender(Zipper $z)
+    public static function traverseRender(Zipper $z)
     {
-        return $this->traverse('render', $z);
+        return self::traverse('render', $z);
     }
 
-    public function traverseSubmit(Zipper $z)
+    public static function traverseSubmit(Zipper $z)
     {
-        return $this->traverse('submit', $z);
+        return self::traverse('submit', $z);
     }
 
-    protected function traverse($method, $z)
+    public static function traverse($method, $z)
     {
         if ($z->isLeaf()) {
             return;
         }
         $z->firstChild();
-
-        $recur = array($this, 'recur');
-        return new Bounce(
-            function () use ($method, $z) {
-                $z->getContent()->$method($z);
-            },
-            function () use ($recur, $method, $z) {
-                return call_user_func($recur, $method, $z);
-            }
-        );
+        return self::getStep($method, $z);
     }
 
-    public function recur($method, $z)
+    public static function recur($method, $z)
     {
         if (!$z->next()) {
             $z->parent();
             return null;
         }
-        $recur = array($this, 'recur');
+        return self::getStep($method, $z);
+    }
+
+    public static function getStep($method, $z)
+    {
+        $class = get_class();
         return new Bounce(
             function () use ($method, $z) {
                 $z->getContent()->$method($z);
             },
-            function () use ($method, $z, $recur) {
-                return call_user_func($recur, $method, $z);
+            function () use ($class, $method, $z) {
+                return $class::recur($method, $z);
             }
         );
     }

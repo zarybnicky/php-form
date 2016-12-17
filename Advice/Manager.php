@@ -38,14 +38,6 @@ class Manager
         $this->advice[$spec] = array();
     }
 
-    public function registerAdviceTargets($specs)
-    {
-        $this->advice = array_merge(
-            $this->advice,
-            array_combine($specs, array_fill(0, count($specs), array()))
-        );
-    }
-
     public function run($spec, $fn, $args)
     {
         list($target, $depth, $type, $name) = $this->parseSpec(array($spec));
@@ -78,12 +70,17 @@ class Manager
         $expr = new E\Call($fn);
         foreach ($advice as $a) {
             list($type, $adviceFn) = $a;
-            $expr = $this->adviceStep($expr, $type, new E\Call($adviceFn));
+            $expr = self::adviceStep($expr, $type, new E\Call($adviceFn));
         }
         return $expr;
     }
 
-    private function adviceStep($fn, $type, $advice)
+    private function lazyBuildExpression($fn, $advice)
+    {
+        //TODO: ..
+    }
+
+    private static function adviceStep($fn, $type, $advice)
     {
         switch ($type) {
         case self::BEFORE:

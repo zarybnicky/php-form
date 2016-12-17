@@ -17,21 +17,20 @@ class SimpleTable extends Widget
                 return new Tag(
                     'tr',
                     array(),
-                    new Tag('td', array(), $label),
+                    new Tag('td', array(), $label ?: ''),
                     new Tag('td', array(), $x)
                 );
             },
             $this->children
         );
-        return array(
+
+        return new Tag(
+            'table', $this->value,
+            $children,
             new Tag(
-                'table', $this->attributes,
-                $children,
-                new Tag(
-                    'tr', array(),
-                    new Tag('td'),
-                    new Tag('td', array(), new Tag('input', array('type'=>'submit')))
-                )
+                'tr', array(),
+                new Tag('td'),
+                new Tag('td', array(), new Tag('input', array('type'=>'submit')))
             )
         );
     }

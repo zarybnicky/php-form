@@ -8,13 +8,16 @@ class EnctypeReducer extends Plugin
 {
     public function __construct()
     {
+        parent::__construct();
+        $this->name = 'EnctypeReducer';
+
         $this->addAdvice(
             array('render', -50, 'before'),
-            array($this, 'extractEnctype')
+            get_class() . '::extractEnctype'
         );
     }
 
-    public function extractEnctype(Zipper $z)
+    public static function extractEnctype(Zipper $z)
     {
         $as = array();
         foreach ($z->getContent()->flattenPostorder() as $x) {

@@ -115,9 +115,8 @@ $z = new Fields\Void('nested');
 $z->add($f);
 $z->add($t);
 
-/*
-foreach (range(0, 1000) as $i) {
-    $field = new Fields\Text();
+foreach (range(0, 2000) as $i) {
+    $field = new Fields\Text((string) $i);
     $field->with(new Validator(new Validation\Custom(
         function ($x) {
             return $x === '42';
@@ -127,35 +126,15 @@ foreach (range(0, 1000) as $i) {
     $z->add($field);
     //echo convert(memory_get_usage()), "\n";
 }
-*/
+
 $z->set('method', DataSource::POST());
 $z->with(new Generator(new Widget\SimpleTable()));
 $z->run();
 
-//echo convert(memory_get_usage()), "\n";
+echo convert(memory_get_usage()), "\n";
+echo convert(memory_get_peak_usage()), "\n";
 
-//echo convert(memory_get_peak_usage()), "\n";
-function analyzeMem($obj, $deep = false)
-{
-    if (is_scalar($obj)) {
-        return strlen(serialize($obj));
-    }
-    if ($obj instanceof \Closure) {
-        return '[closure]';
-    }
-    $usage = array('Total' => strlen(serialize($obj)));
-    while (list($prop, $propVal) = each($obj)) {
-        if ($deep && (is_object($propVal) || is_array($propVal))) {
-            $usage['Children'][$prop] = analyzeMem($propVal);
-        } elseif ($propVal instanceof \Closure) {
-            $usage['Children'][$prop] = '[closure]';
-        } else {
-            $usage['Children'][$prop] = strlen(serialize($propVal));
-        }
-    }
-    return $usage;
-}
-
+ob_start();
 ?>
 <html>
     <body>
@@ -163,7 +142,7 @@ function analyzeMem($obj, $deep = false)
             <div style="flex:auto">
                 <h1>Table</h1>
                 <h2>Errors</h2>
-                <?= var_dump($x->get('errors')) ?>
+                <?php var_dump($x->get('errors')) ?>
                 <h2>Result</h2>
                 <?php var_dump($x->get('result')); ?>
                 <h2>View</h2>
@@ -172,7 +151,7 @@ function analyzeMem($obj, $deep = false)
             <div style="flex:auto">
                 <h1>Divs</h1>
                 <h2>Errors</h2>
-                <?= var_dump($y->get('errors')) ?>
+                <?php var_dump($y->get('errors')) ?>
                 <h2>Result</h2>
                 <?php var_dump($y->get('result')); ?>
                 <h2>View</h2>
@@ -181,7 +160,7 @@ function analyzeMem($obj, $deep = false)
             <div style="flex:auto">
                 <h1>Nested</h1>
                 <h2>Errors</h2>
-                <?= var_dump($z->get('errors')) ?>
+                <?php var_dump($z->get('errors')) ?>
                 <h2>Result</h2>
                 <?php var_dump($z->get('result')); ?>
                 <h2>View</h2>
@@ -190,3 +169,8 @@ function analyzeMem($obj, $deep = false)
         </div>
     </body>
 </html>
+<?php
+    ob_clean();
+
+echo convert(memory_get_usage()), "\n";
+echo convert(memory_get_peak_usage()), "\n";

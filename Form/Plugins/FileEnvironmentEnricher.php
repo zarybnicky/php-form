@@ -9,8 +9,11 @@ class FileEnvironmentEnricher extends Plugin
 {
     public function __construct()
     {
-        $set = array($this, 'setEnvironment');
-        $unset = array($this, 'unsetEnvironment');
+        parent::__construct();
+        $this->name = 'FileEnvironmentEnricher';
+
+        $set = get_class() . '::setEnvironment';
+        $unset = get_class() . '::unsetEnvironment';
 
         $this->addAdvice(array('render', -100, 'before'), $set);
         $this->addAdvice(array('submit', -100, 'before'), $set);
@@ -18,21 +21,21 @@ class FileEnvironmentEnricher extends Plugin
         $this->addAdvice(array('submit', -100, 'after'), $unset);
     }
 
-    public function setEnvironment(Zipper $z)
+    public static function setEnvironment(Zipper $z)
     {
         $current = $z->getContent();
-        $data = $this->getData();
+        $data = self::getData();
         $env = new Environment($current->get('initialFileData'), $data);
         $current->set('fileEnvironment', $env);
     }
 
-    public function unsetEnvironment(Zipper $z)
+    public static function unsetEnvironment(Zipper $z)
     {
         $current = $z->getContent();
         $current->set('fileEnvironment', null);
     }
 
-    public function getData()
+    public static function getData()
     {
         $result = array();
         foreach ($_FILES as $name => $input) {

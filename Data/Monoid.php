@@ -5,13 +5,13 @@ class Monoid
 {
     protected $mempty;
     protected $mappend;
-    protected $lift;
+    protected $pure;
 
-    public function __construct($mempty, $mappend, $lift = null)
+    public function __construct($mempty, $mappend, $pure = null)
     {
         $this->mempty = $mempty;
         $this->mappend = $mappend;
-        $this->lift = $lift;
+        $this->pure = $pure;
     }
 
     public function __invoke()
@@ -27,15 +27,15 @@ class Monoid
     public function mappend($x, $y)
     {
         $mappend = $this->mappend;
-        $lift = $this->lift;
-        return $lift
-            ? $mappend($lift($x), $lift($y))
+        $pure = $this->pure;
+        return $pure
+            ? $mappend($pure($x), $pure($y))
             : $mappend($x, $y);
     }
 
     public function mconcat(array $xs)
     {
-        $xs = $this->lift ? array_map($this->lift, $xs) : $xs;
+        $xs = $this->pure ? array_map($this->pure, $xs) : $xs;
         return array_reduce($xs, $this->mappend, $this->mempty);
     }
 

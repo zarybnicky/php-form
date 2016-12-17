@@ -7,32 +7,38 @@ use Olc\Validation\ValidatorInterface;
 
 class Validator extends Plugin
 {
-    protected $validator;
-
-    public function __construct(ValidatorInterface $x)
+    public function __construct(ValidatorInterface $validator)
     {
-        $this->validator = $x;
-        $this->addAdvice(array('submit', 0, 'before'), array($this, 'validate'));
+        parent::__construct();
+        $this->name = 'Validator (' . get_class($validator) . ')';
+
+        $this->addAdvice(
+            array('submit', 0, 'before'),
+            self::getValidator($validator)
+        );
     }
 
-    public function validate(Zipper $x)
+    public static function getValidator(ValidatorInterface $validator)
+    {
+        $class = get_class();
+        return function (Zipper $x) use ($class, $validator) {
+            $class::validate($x, $validator);
+        };
+    }
+
+    public static function validate(Zipper $x, ValidatorInterface $validator)
     {
         $current = $x->getContent();
         list(, $data) = $x->getRoot()->get('environment')->get($x->getPath());
 
-        $this->validator->validate($data);
+        $validator->validate($data);
 
         $current->set(
             'errors',
             array_merge(
                 $current->get('errors') ?: array(),
-                $this->validator->getMessages()
+                $validator->getMessages()
             )
         );
-    }
-
-    public function getName()
-    {
-        return 'validator-' . get_class($this->validator);
     }
 }
